@@ -158,11 +158,11 @@ const deleteBlog = async (req, res) => {
     return res.status(400).json({ message: "All fields required!!" });
   }
   if (email !== req?.user?.email) {
-    return res.status(400).json({ message: "not authorized" });
+    return res.status(403).json({ message: "Not authorized" });
   }
   try {
     // Delete the blog
-    const deletedBlog = await Blog.deleteOne({ _id: id });
+    const deletedBlog = await Blog.findByIdAndDelete(id);
     if (!deletedBlog) {
       return res.status(404).json({ message: "Blog not found" });
     }
@@ -173,9 +173,12 @@ const deleteBlog = async (req, res) => {
     }
     // Update the user's blogs array
     user.blogs = user.blogs.filter((blog) => blog.toString() !== id);
-    // Save the updated user back to the database
     await user.save();
-    res.status(200).json(deletedBlog);
+    // Find all users who have bookmarked this blog and update their bookmarks
+    await User.updateMany({ bookMarks: id }, { $pull: { bookMarks: id } });
+    res
+      .status(200)
+      .json({ message: "Blog deleted and bookmarks updated successfully" });
   } catch (error) {
     console.error("Error deleting blog:", error);
     res.status(500).json({ message: "Internal server error" });
