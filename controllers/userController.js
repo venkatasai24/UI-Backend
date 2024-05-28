@@ -11,7 +11,9 @@ const getUser = async (req, res) => {
     return res.status(400).json({ message: "email required!!" });
   }
   //check if user doesnt exists
-  const user = await User.findOne({ email }).select("-password -refreshToken");
+  const user = await User.findOne({ email }).select(
+    "-password -refreshToken -bookMarks"
+  );
   if (!user) {
     return res.status(400).json({ message: "User doesnt exists!!" });
   }
@@ -37,6 +39,63 @@ const getUser = async (req, res) => {
 //     res.status(400).json({ message: "internal server error" });
 //   }
 // };
+
+// Get bookmarks
+const getBookMarks = async (req, res) => {
+  const { bookMarks } = req.user;
+  return res.status(200).json(bookMarks);
+};
+
+// Add bookmark
+const addBookMark = async (req, res) => {
+  const { email } = req.user;
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ message: "ID field required!" });
+  }
+  try {
+    const user = await User.findOne({ email }).select(
+      "-password -refreshToken"
+    );
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (user.bookMarks.includes(id)) {
+      return res.status(400).json({ message: "Bookmark already exists" });
+    }
+    user.bookMarks.push(id);
+    await user.save();
+    return res.status(200).json(user.bookMarks);
+  } catch (error) {
+    console.error("Error adding bookmark:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+// Delete bookmark
+const deleteBookMark = async (req, res) => {
+  const { email } = req.user;
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ message: "ID field required!" });
+  }
+  try {
+    const user = await User.findOne({ email }).select(
+      "-password -refreshToken"
+    );
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.bookMarks = user.bookMarks.filter(
+      (bookMark) => bookMark.toString() !== id
+    );
+    await user.save();
+    return res.status(200).json(user.bookMarks);
+  } catch (error) {
+    console.error("Error deleting bookmark:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
 
 //create user
 const registerUser = async (req, res) => {
@@ -172,6 +231,9 @@ module.exports = {
   getUser,
   refreshUserToken,
   // getUserBlogs,
+  getBookMarks,
+  addBookMark,
+  deleteBookMark,
   updatePassword,
   loginUser,
   registerUser,

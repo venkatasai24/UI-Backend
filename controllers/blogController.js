@@ -22,17 +22,24 @@ const escapeRegex = (string) => {
 
 //get specific blogs by title
 const getBlogsByTitle = async (req, res) => {
-  let { title } = req.params;
-  if (!title) {
-    return res.status(400).json({ message: "Title field required!!" });
+  let { query } = req.params;
+  if (!query) {
+    return res.status(400).json({ message: "query field required!!" });
   }
-  title = escapeRegex(title);
+  query = escapeRegex(query);
+  const regex = new RegExp(query, "i"); // case-insensitive regex
   try {
-    const blogs = await Blog.find({ title: { $regex: title, $options: "i" } });
+    const blogs = await Blog.find({
+      $or: [
+        { title: { $regex: regex } },
+        { tags: { $regex: regex } },
+        { categories: { $regex: regex } },
+      ],
+    });
     if (blogs.length > 0) {
       res.status(200).json(blogs);
     } else {
-      res.status(404).json({ message: `No blogs found with query ${title}` });
+      res.status(404).json({ message: `No blogs found with query ${query}` });
     }
   } catch (error) {
     console.error("Error fetching blogs:", error);

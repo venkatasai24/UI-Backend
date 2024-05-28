@@ -21,6 +21,12 @@ const userSchema = mongoose.Schema(
         ref: "Blog",
       },
     ],
+    bookMarks: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Blog",
+      },
+    ],
   },
   {
     timestamps: true,

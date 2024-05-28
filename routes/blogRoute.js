@@ -14,7 +14,7 @@ const blogRouter = express.Router();
 
 blogRouter.get("/", getBlogs);
 blogRouter.get("/:id", getBlog);
-blogRouter.get("/search/:title", getBlogsByTitle);
+blogRouter.get("/search/:query", getBlogsByTitle);
 blogRouter.get("/tags/:tag", getTagBlog);
 blogRouter.get("/categories/:category", getCategoryBlog);
 blogRouter.post("/", handleUser, createBlog);

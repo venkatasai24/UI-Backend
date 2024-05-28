@@ -17,17 +17,19 @@ const handleUser = async (req, res, next) => {
       req.user = await User.findOne({ email: decoded.email }).select(
         "-password -refreshToken"
       );
-
+      if (!req.user) {
+        return res.status(404).json({ message: "User not found" });
+      }
       // console.log(req.user);
       next();
     } catch (error) {
       console.log(error);
-      res.status(400).json({ message: "not authorized" });
+      res.status(401).json({ message: "not authorized" });
     }
   }
 
   if (!token) {
-    res.status(400).json({ message: "not authorized as no token exists" });
+    res.status(401).json({ message: "not authorized as no token exists" });
   }
 };
 
