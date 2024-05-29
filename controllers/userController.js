@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const Blog = require("../models/blog");
