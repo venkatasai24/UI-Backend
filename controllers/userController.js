@@ -20,6 +20,58 @@ const getUser = async (req, res) => {
   res.status(201).json(user);
 };
 
+// update user
+const updateUser = async (req, res) => {
+  const { name, email } = req.body;
+  try {
+    // Check if the new email already exists in the database
+    if (req.user.email !== email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({
+          message: "User with this email already exists, try another email",
+        });
+      }
+    }
+    // Find the user by the current email and update the name and email fields
+    const user = await User.findOneAndUpdate(
+      { email: req.user.email },
+      { $set: { name, email } },
+      { new: true } // Return the updated document
+    );
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    let data = {
+      email: user.email,
+      name: user.name,
+      createdAt: user.createdAt,
+    };
+    if (req.user.email !== email) {
+      await Blog.updateMany(
+        { createdBy: req.user.email },
+        { createdBy: email }
+      );
+      const tokens = generateToken(email);
+      // Saving refreshToken with current user
+      user.refreshToken = tokens.refreshToken;
+      await user.save();
+      // Send the updated user data and access token in the response
+      res.cookie("jwt", tokens.refreshToken, {
+        httpOnly: true,
+        sameSite: "None",
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+      data.accessToken = tokens.accessToken;
+    }
+    res.status(201).json(data);
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 //get user associated blogs
 // const getUserBlogs = async (req, res) => {
 //   const blogIds = req.user.blogs;
@@ -192,11 +244,7 @@ const refreshUserToken = async (req, res) => {
         return res.status(406).json({ message: "Unauthorized" });
       } else {
         // Correct token we send a new access token
-        const accessToken = jwt.sign(
-          { email: decoded.email },
-          process.env.JWT_SECRET,
-          { expiresIn: "15m" }
-        );
+        const accessToken = generateToken(decoded.email).accessToken;
         return res.json({ accessToken, email: decoded.email });
       }
     });
@@ -229,6 +277,7 @@ const logoutUser = async (req, res) => {
 
 module.exports = {
   getUser,
+  updateUser,
   refreshUserToken,
   // getUserBlogs,
   getBookMarks,
