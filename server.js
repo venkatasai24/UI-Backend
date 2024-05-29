@@ -33,7 +33,15 @@ app.use(cors(corsOptions));
 
 // Middleware to log route and method
 app.use((req, res, next) => {
-  console.log(`[${new Date().toLocaleString()}] ${req.method} ${req.url}`);
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    const statusCode = res.statusCode;
+    const logMessage = `[${new Date().toLocaleString()}] ${req.method} ${
+      req.url
+    } - ${statusCode} - ${duration}ms`;
+    // console.log(logMessage);
+  });
   next();
 });
 
