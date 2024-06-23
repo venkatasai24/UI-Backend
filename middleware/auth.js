@@ -27,7 +27,7 @@ const handleUser = async (req, res, next) => {
     } catch (error) {
       console.log(error);
       res.status(401).json({
-        message: "not authorized, please refresh the page!!",
+        message: "not authorized, please login again!!",
       });
     }
   }
